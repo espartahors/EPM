@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Add Supplier to Part | Parts Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'part-list' %}">Parts</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'part-detail' part.pk %}">{{ part.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Add Supplier</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-plus-circle me-2"></i> Add Supplier to Part</h2>
+        <p class="text-muted">Associate a supplier with {{ part.name }}</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card form-card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i> Add Supplier</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h6>Part Details</h6>
+                    <table class="table table-sm table-bordered">
+                        <tbody>
+                            <tr>
+                                <th class="table-header" style="width: 30%;">Part Number</th>
+                                <td>{{ part.part_number }}</td>
+                            </tr>
+                            <tr>
+                                <th class="table-header">Name</th>
+                                <td>{{ part.name }}</td>
+                            </tr>
+                            <tr>
+                                <th class="table-header">Category</th>
+                                <td>{{ part.category.name|default:"—" }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <form method="post" id="addSupplierForm">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            {{ form.supplier|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.supplier_part_number|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.unit_cost|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.lead_time_days|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.is_preferred|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            {{ form.notes|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-success" id="addSupplierSubmitBtn">
+                            <i class="fas fa-plus-circle me-1"></i> Add Supplier
+                        </button>
+                        <a href="{% url 'part-detail' part.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize form submission handler
+    document.addEventListener('DOMContentLoaded', function() {
+        handleFormSubmit('addSupplierForm', 'addSupplierSubmitBtn');
+    });
+</script>
+{% endblock %}

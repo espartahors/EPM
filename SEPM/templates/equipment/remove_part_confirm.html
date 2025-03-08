@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Remove Part from Equipment | Parts Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'equipment-tree' %}">Equipment</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'equipment-detail' equipment.pk %}">{{ equipment.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Remove Part</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i> Confirm Removal</h5>
+            </div>
+            <div class="card-body text-center">
+                <i class="fas fa-unlink fa-4x text-danger mb-3"></i>
+                <h4>Are you sure you want to remove this part?</h4>
+                <p class="text-muted">
+                    <strong>{{ equipment_part.part.part_number }} - {{ equipment_part.part.name }}</strong><br>
+                    Position: {{ equipment_part.position|default:"N/A" }}<br>
+                    Quantity: {{ equipment_part.quantity }}
+                </p>
+                <p>From</p>
+                <p class="text-muted">
+                    <strong>{{ equipment.equipment_code }} - {{ equipment.name }}</strong>
+                </p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-unlink me-1"></i> Yes, Remove Part
+                        </button>
+                        <a href="{% url 'equipment-detail' equipment.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

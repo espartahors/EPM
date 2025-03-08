@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ supplier.name }} | Parts Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'supplier-list' %}">Suppliers</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ supplier.name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>{{ supplier.name }}</h2>
+        <p class="text-muted">Supplier Details</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <div class="btn-group">
+            {% if not request.user.is_read_only %}
+            <a href="{% url 'supplier-update' supplier.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i> Edit
+            </a>
+            <a href="{% url 'supplier-delete' supplier.pk %}" class="btn btn-danger">
+                <i class="fas fa-trash me-1"></i> Delete
+            </a>
+            {% endif %}
+            <a href="{% url 'supplier-list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Supplier Details -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Supplier Details</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-bordered">
+                    <tbody>
+                        <tr>
+                            <th class="table-header" style="width: 30%;">Name</th>
+                            <td>{{ supplier.name }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Contact Person</th>
+                            <td>{{ supplier.contact_person|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Email</th>
+                            <td>
+                                {% if supplier.email %}
+                                <a href="mailto:{{ supplier.email }}">{{ supplier.email }}</a>
+                                {% else %}
+                                —
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Phone</th>
+                            <td>{{ supplier.phone|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Website</th>
+                            <td>
+                                {% if supplier.website %}
+                                <a href="{{ supplier.website }}" target="_blank">
+                                    {{ supplier.website }} <i class="fas fa-external-link-alt ms-1"></i>
+                                </a>
+                                {% else %}
+                                —
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                {% if supplier.address %}
+                <div class="mt-3">
+                    <h6>Address</h6>
+                    <p>{{ supplier.address|linebreaksbr }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Supplier Parts -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-tools me-2"></i> Supplied Parts</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Part Number</th>
+                                <th>Name</th>
+                                <th>Supplier Part Number</th>
+                                <th>Preferred</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ps in supplier.partsupplier_set.all %}
+                            <tr>
+                                <td>{{ ps.part.part_number }}</td>
+                                <td>
+                                    <a href="{% url 'part-detail' ps.part.pk %}">
+                                        {{ ps.part.name }}
+                                    </a>
+                                </td>
+                                <td>{{ ps.supplier_part_number|default:"Same as internal" }}</td>
+                                <td>
+                                    {% if ps.is_preferred %}
+                                    <span class="badge rounded-pill bg-success">Yes</span>
+                                    {% else %}
+                                    <span class="badge rounded-pill bg-secondary">No</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'part-detail' ps.part.pk %}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3">This supplier doesn't supply any parts yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

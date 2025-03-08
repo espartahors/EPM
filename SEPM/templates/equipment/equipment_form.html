@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+{% if form.instance.pk %}Edit{% else %}Add{% endif %} Equipment | Parts Manager
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'equipment-tree' %}">Equipment</a></li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    {% if form.instance.pk %}Edit{% else %}Add{% endif %} Equipment
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>
+            <i class="fas fa-{% if form.instance.pk %}edit{% else %}plus-circle{% endif %} me-2"></i>
+            {% if form.instance.pk %}Edit{% else %}Add{% endif %} Equipment
+        </h2>
+        <p class="text-muted">
+            {% if form.instance.pk %}
+            Update the details for {{ form.instance.name }}
+            {% else %}
+            Create a new equipment item
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card form-card">
+            <div class="card-header bg-{% if form.instance.pk %}primary{% else %}success{% endif %} text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-{% if form.instance.pk %}edit{% else %}plus-circle{% endif %} me-2"></i>
+                    Equipment Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="equipmentForm">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.equipment_code|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.name|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.parent|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.category|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            {{ form.position|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.item_code|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.revision|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.status|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.description|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-{% if form.instance.pk %}primary{% else %}success{% endif %}" id="equipmentSubmitBtn">
+                            <i class="fas fa-save me-1"></i> 
+                            {% if form.instance.pk %}Update{% else %}Save{% endif %} Equipment
+                        </button>
+                        <a href="{% if form.instance.pk %}{% url 'equipment-detail' form.instance.pk %}{% else %}{% url 'equipment-tree' %}{% endif %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize form submission handler
+    document.addEventListener('DOMContentLoaded', function() {
+        handleFormSubmit('equipmentForm', 'equipmentSubmitBtn');
+    });
+</script>
+{% endblock %}

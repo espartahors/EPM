@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ part.name }} | Parts Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'part-list' %}">Parts</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ part.part_number }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>{{ part.name }}</h2>
+        <p class="text-muted">Part Number: {{ part.part_number }}</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <div class="btn-group">
+            {% if not request.user.is_read_only %}
+            <a href="{% url 'part-update' part.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i> Edit
+            </a>
+            <a href="{% url 'part-delete' part.pk %}" class="btn btn-danger">
+                <i class="fas fa-trash me-1"></i> Delete
+            </a>
+            {% endif %}
+            <a href="{% url 'part-list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Part Details -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Part Details</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-bordered">
+                    <tbody>
+                        <tr>
+                            <th class="table-header" style="width: 30%;">Part Number</th>
+                            <td>{{ part.part_number }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Category</th>
+                            <td>{{ part.category.name|default:"Not categorized" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Stock Level</th>
+                            <td>
+                                {% if part.is_out_of_stock %}
+                                    <span class="badge rounded-pill bg-danger">Out of Stock</span>
+                                {% elif part.is_low_stock %}
+                                    <span class="badge rounded-pill bg-warning text-dark">
+                                        Low ({{ part.current_stock }} {{ part.unit }})
+                                    </span>
+                                {% else %}
+                                    <span class="badge rounded-pill bg-success">
+                                        {{ part.current_stock }} {{ part.unit }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Minimum Stock</th>
+                            <td>{{ part.min_stock_level }} {{ part.unit }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Status</th>
+                            <td>
+                                {% if part.status == 'active' %}
+                                    <span class="badge rounded-pill bg-success">Active</span>
+                                {% elif part.status == 'obsolete' %}
+                                    <span class="badge rounded-pill bg-secondary">Obsolete</span>
+                                {% elif part.status == 'discontinued' %}
+                                    <span class="badge rounded-pill bg-danger">Discontinued</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Last Updated</th>
+                            <td>{{ part.updated_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                {% if part.description %}
+                <div class="mt-3">
+                    <h6>Description</h6>
+                    <p>{{ part.description }}</p>
+                </div>
+                {% endif %}
+                
+                {% if not request.user.is_read_only %}
+                <div class="mt-3">
+                    <a href="{% url 'add-supplier-to-part' part.pk %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-plus me-1"></i> Add Supplier
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Related Equipment -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-sitemap me-2"></i> Used In Equipment</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Equipment</th>
+                                <th>Position</th>
+                                <th>Quantity</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ep in equipment_parts %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'equipment-detail' ep.equipment.pk %}">
+                                        {{ ep.equipment.equipment_code }} - {{ ep.equipment.name }}
+                                    </a>
+                                </td>
+                                <td>{{ ep.position|default:"—" }}</td>
+                                <td>{{ ep.quantity }}</td>
+                                <td>
+                                    <a href="{% url 'equipment-detail' ep.equipment.pk %}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-3">This part is not used in any equipment.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Suppliers -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-building me-2"></i> Suppliers</h5>
+                    {% if not request.user.is_read_only %}
+                    <a href="{% url 'add-supplier-to-part' part.pk %}" class="btn btn-sm btn-success">
+                        <i class="fas fa-plus me-1"></i> Add
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Supplier</th>
+                                <th>Part Number</th>
+                                <th>Unit Cost</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ps in part_suppliers %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'supplier-detail' ps.supplier.pk %}">
+                                        {{ ps.supplier.name }}
+                                    </a>
+                                    {% if ps.is_preferred %}
+                                    <span class="badge bg-success ms-1">Preferred</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ ps.supplier_part_number|default:"Same as internal" }}</td>
+                                <td>{% if ps.unit_cost %}${{ ps.unit_cost }}{% else %}—{% endif %}</td>
+                                <td>
+                                    {% if ps.lead_time_days %}
+                                    <span class="badge bg-info text-dark">{{ ps.lead_time_days }} days lead time</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-3">No suppliers associated with this part.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Documents -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i> Documents</h5>
+                    {% if not request.user.is_read_only %}
+                    <a href="{% url 'document-create' %}?part={{ part.pk }}" class="btn btn-sm btn-success">
+                        <i class="fas fa-upload me-1"></i> Upload
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Type</th>
+                                <th>Title</th>
+                                <th>Last Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documents %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-file-{% if doc.is_pdf %}pdf text-danger{% elif doc.is_image %}image text-primary{% else %}alt text-info{% endif %} me-1"></i>
+                                    {{ doc.get_document_type_display }}
+                                </td>
+                                <td>{{ doc.title }}</td>
+                                <td>{{ doc.updated_at|date:"Y-m-d" }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'document-view' doc.pk %}" class="btn btn-outline-info" title="View" target="_blank">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'document-download' doc.pk %}" class="btn btn-outline-secondary" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        {% if not request.user.is_read_only %}
+                                        <a href="{% url 'document-update' doc.pk %}" class="btn btn-outline-primary" title="Update">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'document-delete' doc.pk %}" class="btn btn-outline-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-3">No documents available for this part.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

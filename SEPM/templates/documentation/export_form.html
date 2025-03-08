@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Export Data | Parts Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Export Data</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-file-export me-2"></i> Export Data</h2>
+        <p class="text-muted">Export system data to CSV or Excel files</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card form-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-file-export me-2"></i> Export Data</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="exportForm">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Export Options:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li><strong>Equipment Export:</strong> Includes equipment codes, names, positions, and details</li>
+                            <li><strong>Parts Export:</strong> Includes part numbers, names, stock levels, and details</li>
+                            <li><strong>BOM Export:</strong> Includes equipment and their associated parts with quantities</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary" id="exportSubmitBtn">
+                            <i class="fas fa-file-export me-1"></i> Generate Export
+                        </button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize form submission handler
+    document.addEventListener('DOMContentLoaded', function() {
+        handleFormSubmit('exportForm', 'exportSubmitBtn');
+    });
+</script>
+{% endblock %}

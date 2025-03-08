@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Equipment Tree | Parts Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Tree View Styling */
+    .tree-view {
+        max-height: calc(100vh - 150px);
+        overflow-y: auto;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .tree-item {
+        padding: 5px 0;
+    }
+    
+    .tree-toggler {
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .tree-toggler i {
+        width: 20px;
+        text-align: center;
+    }
+    
+    .tree-children {
+        margin-left: 20px;
+        display: none;
+    }
+    
+    .tree-children.show {
+        display: block;
+    }
+    
+    .tree-item.selected > .tree-toggler {
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .details-panel {
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 20px;
+        height: calc(100vh - 170px);
+        overflow-y: auto;
+    }
+    
+    /* Search Bar */
+    .search-container {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        color: #999;
+    }
+    
+    .search-input {
+        padding-left: 35px;
+        border-radius: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h2><i class="fas fa-sitemap me-2"></i> Equipment Hierarchy</h2>
+        <p class="text-muted">Browse equipment hierarchy, view details, and manage related parts</p>
+    </div>
+</div>
+
+{% if not request.user.is_read_only %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-cog me-2"></i> Equipment Controls</span>
+                    <div>
+                        <a href="{% url 'equipment-create' %}" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i> Add Equipment
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Equipment Tree View -->
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-sitemap me-2"></i> Equipment Hierarchy</span>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary expand-all" title="Expand All">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary collapse-all" title="Collapse All">
+                            <i class="fas fa-compress-arrows-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="search-container p-2">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="form-control search-input" id="equipmentSearch" placeholder="Search equipment...">
+                </div>
+                <div class="tree-view">
+                    {% for equipment in root_equipment %}
+                        {% include 'equipment/includes/equipment_tree_node.html' with equipment=equipment %}
+                    {% empty %}
+                        <p class="p-3 text-muted">No equipment found. Add some equipment to get started.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Equipment Details Panel -->
+    <div class="col-md-8">
+        <div class="card details-panel">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Equipment Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-5" id="empty-details">
+                    <i class="fas fa-sitemap fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">Select an equipment from the tree</h4>
+                    <p class="text-muted">Equipment details will appear here</p>
+                </div>
+                <div id="equipment-details" style="display: none;">
+                    <!-- Equipment details loaded via AJAX will go here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Toggle tree items
+        $('.tree-toggler').click(function(e) {
+            e.preventDefault();
+            $(this).find('i:first').toggleClass('fa-chevron-right fa-chevron-down');
+            $(this).parent().children('.tree-children').toggleClass('show');
+        });
+        
+        // Select tree items
+        $('.tree-toggler').click(function() {
+            $('.tree-item').removeClass('selected');
+            $(this).parent().addClass('selected');
+            
+            // Load equipment details via AJAX if this is an equipment item
+            var equipmentId = $(this).data('equipment-id');
+            if (equipmentId) {
+                loadEquipmentDetails(equipmentId);
+            }
+        });
+        
+        // Expand All button functionality
+        $('.expand-all').click(function() {
+            $('.tree-children').addClass('show');
+            $('.tree-toggler i:first-child').removeClass('fa-chevron-right').addClass('fa-chevron-down');
+        });
+        
+        // Collapse All button functionality
+        $('.collapse-all').click(function() {
+            $('.tree-children').removeClass('show');
+            $('.tree-toggler i:first-child').removeClass('fa-chevron-down').addClass('fa-chevron-right');
+        });
+        
+        // Filter tree functionality
+        $('#equipmentSearch').on('keyup', function() {
+            var value = $(this).val().toLowerCase();
+            $('.tree-item').each(function() {
+                var text = $(this).find('> .tree-toggler span').text().toLowerCase();
+                var found = text.indexOf(value) > -1;
+                
+                if (found) {
+                    $(this).show();
+                    // Expand parents to make visible items that match
+                    $(this).parents('.tree-children').addClass('show');
+                    $(this).parents('.tree-item').find('> .tree-toggler i:first-child')
+                        .removeClass('fa-chevron-right').addClass('fa-chevron-down');
+                } else {
+                    // Only hide if no children match the search
+                    var hasMatchingChildren = $(this).find('.tree-item:visible').length > 0;
+                    if (!hasMatchingChildren) {
+                        $(this).hide();
+                    }
+                }
+            });
+        });
+        
+        // Load equipment details via AJAX
+        function loadEquipmentDetails(equipmentId) {
+            $('#empty-details').hide();
+            $('#equipment-details').html('<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-3x"></i><p class="mt-2">Loading details...</p></div>').show();
+            
+            $.ajax({
+                url: '/equipment/' + equipmentId + '/',
+                type: 'GET',
+                dataType: 'html',
+                success: function(data) {
+                    $('#equipment-details').html(data);
+                },
+                error: function() {
+                    $('#equipment-details').html('<div class="alert alert-danger">Error loading equipment details.</div>');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,212 @@
+<div class="row">
+    <div class="col-md-6">
+        <h5>{{ equipment.name }} ({{ equipment.position }} - {{ equipment.item_code }})</h5>
+        <p class="text-muted">{{ equipment.equipment_code }}</p>
+        
+        <table class="table table-sm table-bordered">
+            <tbody>
+                <tr>
+                    <th class="table-header">Category</th>
+                    <td>{{ equipment.category.name|default:"N/A" }}</td>
+                </tr>
+                <tr>
+                    <th class="table-header">Position</th>
+                    <td>{{ equipment.position|default:"N/A" }}</td>
+                </tr>
+                <tr>
+                    <th class="table-header">Item Code</th>
+                    <td>{{ equipment.item_code|default:"N/A" }}</td>
+                </tr>
+                <tr>
+                    <th class="table-header">Revision</th>
+                    <td>{{ equipment.revision|default:"N/A" }}</td>
+                </tr>
+                <tr>
+                    <th class="table-header">Status</th>
+                    <td>
+                        {% if equipment.status == 'active' %}
+                            <span class="badge rounded-pill bg-success">Active</span>
+                        {% elif equipment.status == 'inactive' %}
+                            <span class="badge rounded-pill bg-secondary">Inactive</span>
+                        {% elif equipment.status == 'maintenance' %}
+                            <span class="badge rounded-pill bg-warning text-dark">Under Maintenance</span>
+                        {% elif equipment.status == 'retired' %}
+                            <span class="badge rounded-pill bg-danger">Retired</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th class="table-header">Last Update</th>
+                    <td>{{ equipment.updated_at|date:"Y-m-d" }}</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        {% if equipment.description %}
+            <h6 class="mt-3">Description</h6>
+            <p>{{ equipment.description }}</p>
+        {% endif %}
+        
+        <div class="mt-3">
+            <div class="btn-toolbar">
+                {% if not request.user.is_read_only %}
+                <a href="{% url 'equipment-update' equipment.pk %}" class="btn btn-sm btn-outline-primary me-1">
+                    <i class="fas fa-edit me-1"></i> Edit
+                </a>
+                <a href="{% url 'equipment-delete' equipment.pk %}" class="btn btn-sm btn-outline-danger me-1">
+                    <i class="fas fa-trash me-1"></i> Delete
+                </a>
+                <a href="{% url 'add-part-to-equipment' equipment.pk %}" class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-plus me-1"></i> Add Part
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="document-preview">
+            {% if documents.exists %}
+                {% with documents.first as doc %}
+                    {% if doc.is_image %}
+                        <img src="{{ doc.file.url }}" class="img-fluid" style="max-height: 300px;">
+                    {% else %}
+                        <div class="text-center">
+                            <i class="fas fa-file-{% if doc.is_pdf %}pdf text-danger{% else %}alt text-primary{% endif %} fa-3x mb-3"></i>
+                            <p>{{ doc.title }}<br>(Click below to view)</p>
+                            <a href="{% url 'document-view' doc.pk %}" class="btn btn-primary" target="_blank">
+                                <i class="fas fa-eye me-1"></i> View Document
+                            </a>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            {% else %}
+                <div class="text-center">
+                    <i class="fas fa-file fa-3x text-muted mb-3"></i>
+                    <p>No documents available</p>
+                    {% if not request.user.is_read_only %}
+                    <a href="{% url 'document-create' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-upload me-1"></i> Upload Document
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6><i class="fas fa-tools me-2"></i> Components/Parts</h6>
+            {% if not request.user.is_read_only %}
+            <a href="{% url 'add-part-to-equipment' equipment.pk %}" class="btn btn-sm btn-success">
+                <i class="fas fa-plus me-1"></i> Add Part
+            </a>
+            {% endif %}
+        </div>
+        <table class="table table-sm table-hover parts-table">
+            <thead class="table-header">
+                <tr>
+                    <th>Pos</th>
+                    <th>Part Number</th>
+                    <th>Name</th>
+                    <th>Qty</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ep in equipment_parts %}
+                <tr>
+                    <td>{{ ep.position }}</td>
+                    <td>{{ ep.part.part_number }}</td>
+                    <td>{{ ep.part.name }}</td>
+                    <td>{{ ep.quantity }}</td>
+                    <td>
+                        {% if ep.part.is_out_of_stock %}
+                            <span class="badge rounded-pill bg-danger">Out of Stock</span>
+                        {% elif ep.part.is_low_stock %}
+                            <span class="badge rounded-pill bg-warning text-dark">Low Stock</span>
+                        {% else %}
+                            <span class="badge rounded-pill bg-success">In Stock</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'part-detail' ep.part.pk %}" class="btn btn-outline-info" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if not request.user.is_read_only %}
+                            <a href="{% url 'remove-part-from-equipment' ep.pk %}" class="btn btn-outline-danger" title="Remove">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-3">No parts associated with this equipment.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6><i class="fas fa-file-alt me-2"></i> Documentation</h6>
+            {% if not request.user.is_read_only %}
+            <a href="{% url 'document-create' %}" class="btn btn-sm btn-success">
+                <i class="fas fa-upload me-1"></i> Upload Document
+            </a>
+            {% endif %}
+        </div>
+        <table class="table table-sm table-hover">
+            <thead class="table-header">
+                <tr>
+                    <th>Type</th>
+                    <th>Title</th>
+                    <th>Last Updated</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                <tr>
+                    <td>
+                        <i class="fas fa-file-{% if doc.is_pdf %}pdf text-danger{% elif doc.is_image %}image text-primary{% else %}alt text-info{% endif %} me-1"></i>
+                        {{ doc.get_document_type_display }}
+                    </td>
+                    <td>{{ doc.title }}</td>
+                    <td>{{ doc.updated_at|date:"Y-m-d" }}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'document-view' doc.pk %}" class="btn btn-outline-info" title="View" target="_blank">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'document-download' doc.pk %}" class="btn btn-outline-secondary" title="Download">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% if not request.user.is_read_only %}
+                            <a href="{% url 'document-update' doc.pk %}" class="btn btn-outline-primary" title="Update">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{% url 'document-delete' doc.pk %}" class="btn btn-outline-danger" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center py-3">No documents available for this equipment.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

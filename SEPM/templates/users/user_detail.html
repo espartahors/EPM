@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ user.username }} | Parts Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                {% if request.user.is_superuser %}
+                <li class="breadcrumb-item"><a href="{% url 'user-list' %}">Users</a></li>
+                {% endif %}
+                <li class="breadcrumb-item active" aria-current="page">{{ user.username }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2>{{ user.get_full_name|default:user.username }}</h2>
+        <p class="text-muted">
+            <span class="badge rounded-pill {% if user.is_superuser %}bg-danger{% elif user.is_staff_user %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
+                {% if user.is_superuser %}
+                    Admin
+                {% elif user.is_staff_user %}
+                    Staff
+                {% else %}
+                    User
+                {% endif %}
+            </span>
+            
+            {% if user.is_read_only %}
+                <span class="badge rounded-pill bg-secondary">Read Only</span>
+            {% endif %}
+            
+            {% if user.is_active %}
+                <span class="badge rounded-pill bg-success">Active</span>
+            {% else %}
+                <span class="badge rounded-pill bg-danger">Inactive</span>
+            {% endif %}
+        </p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <div class="btn-group">
+            {% if request.user.is_superuser or request.user.id == user.id %}
+            <a href="{% url 'user-update' user.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i> Edit
+            </a>
+            {% endif %}
+            {% if request.user.is_superuser and request.user.id != user.id %}
+            <a href="{% url 'user-delete' user.pk %}" class="btn btn-danger">
+                <i class="fas fa-trash me-1"></i> Delete
+            </a>
+            {% endif %}
+            {% if request.user.is_superuser %}
+            <a href="{% url 'user-list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Users
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- User Details -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i> User Details</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-bordered">
+                    <tbody>
+                        <tr>
+                            <th class="table-header" style="width: 30%;">Username</th>
+                            <td>{{ user.username }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">First Name</th>
+                            <td>{{ user.first_name|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Last Name</th>
+                            <td>{{ user.last_name|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Email</th>
+                            <td>
+                                {% if user.email %}
+                                <a href="mailto:{{ user.email }}">{{ user.email }}</a>
+                                {% else %}
+                                —
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Department</th>
+                            <td>{{ user.department|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Position</th>
+                            <td>{{ user.position|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Phone</th>
+                            <td>{{ user.phone|default:"—" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Last Login</th>
+                            <td>{{ user.last_login|date:"Y-m-d H:i"|default:"Never" }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Date Joined</th>
+                            <td>{{ user.date_joined|date:"Y-m-d" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Permissions -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i> Permissions</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-bordered">
+                    <tbody>
+                        <tr>
+                            <th class="table-header" style="width: 50%;">Administrator</th>
+                            <td>
+                                {% if user.is_superuser %}
+                                <span class="text-success"><i class="fas fa-check-circle"></i> Yes</span>
+                                {% else %}
+                                <span class="text-danger"><i class="fas fa-times-circle"></i> No</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Staff User</th>
+                            <td>
+                                {% if user.is_staff_user %}
+                                <span class="text-success"><i class="fas fa-check-circle"></i> Yes</span>
+                                {% else %}
+                                <span class="text-danger"><i class="fas fa-times-circle"></i> No</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Read Only</th>
+                            <td>
+                                {% if user.is_read_only %}
+                                <span class="text-success"><i class="fas fa-check-circle"></i> Yes</span>
+                                {% else %}
+                                <span class="text-danger"><i class="fas fa-times-circle"></i> No</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="table-header">Active</th>
+                            <td>
+                                {% if user.is_active %}
+                                <span class="text-success"><i class="fas fa-check-circle"></i> Yes</span>
+                                {% else %}
+                                <span class="text-danger"><i class="fas fa-times-circle"></i> No</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="mt-3">
+                    <h6>Permission Explanation</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <strong>Administrator:</strong> Full access to all features, including user management
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Staff User:</strong> Can create, update, and delete all records
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Read Only:</strong> Can only view data, cannot make changes
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

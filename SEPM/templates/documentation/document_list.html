@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Documents | Parts Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h2><i class="fas fa-file-alt me-2"></i> Documents</h2>
+        <p class="text-muted">Manage and view all documents in the system</p>
+    </div>
+</div>
+
+<!-- Filters and Controls -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-filter me-2"></i> Filters</span>
+                    {% if not request.user.is_read_only %}
+                    <a href="{% url 'document-create' %}" class="btn btn-success">
+                        <i class="fas fa-upload me-1"></i> Upload Document
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{% url 'document-list' %}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" name="search" placeholder="Search documents..." value="{{ search }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" name="type">
+                                <option value="">All Types</option>
+                                <option value="drawing" {% if doc_type == 'drawing' %}selected{% endif %}>Drawings</option>
+                                <option value="manual" {% if doc_type == 'manual' %}selected{% endif %}>Manuals</option>
+                                <option value="bom" {% if doc_type == 'bom' %}selected{% endif %}>BOMs</option>
+                                <option value="datasheet" {% if doc_type == 'datasheet' %}selected{% endif %}>Datasheets</option>
+                                <option value="certificate" {% if doc_type == 'certificate' %}selected{% endif %}>Certificates</option>
+                                <option value="other" {% if doc_type == 'other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" name="equipment">
+                                <option value="">All Equipment</option>
+                                {% if equipment_list %}
+                                    {% for eq in equipment_list %}
+                                    <option value="{{ eq.id }}" {% if equipment_id == eq.id|stringformat:"i" %}selected{% endif %}>
+                                        {{ eq.equipment_code }} - {{ eq.name }}
+                                    </option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-primary w-100">Filter</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Documents Grid -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i> Documents</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for doc in documents %}
+                    <div class="col-md-3 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                {% if doc.is_image %}
+                                <img src="{{ doc.file.url }}" alt="{{ doc.title }}" class="img-fluid mb-3" style="max-height: 120px;">
+                                {% else %}
+                                <i class="fas fa-file-{% if doc.is_pdf %}pdf text-danger{% else %}alt text-primary{% endif %} fa-4x mb-3"></i>
+                                {% endif %}
+                                <h6 class="card-title">{{ doc.title }}</h6>
+                                <p class="card-text small text-muted">
+                                    {{ doc.get_document_type_display }}
+                                    <br>
+                                    Last updated: {{ doc.updated_at|date:"Y-m-d" }}
+                                </p>
+                                {% if doc.equipment %}
+                                <span class="badge bg-primary mb-2">
+                                    <i class="fas fa-sitemap me-1"></i> 
+                                    {{ doc.equipment.equipment_code }}
+                                </span>
+                                {% endif %}
+                                {% if doc.part %}
+                                <span class="badge bg-success mb-2">
+                                    <i class="fas fa-tools me-1"></i> 
+                                    {{ doc.part.part_number }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer">
+                                <div class="btn-group btn-group-sm w-100">
+                                    <a href="{% url 'document-view' doc.pk %}" class="btn btn-outline-primary" title="View" target="_blank">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'document-download' doc.pk %}" class="btn btn-outline-secondary" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    {% if not request.user.is_read_only %}
+                                    <a href="{% url 'document-update' doc.pk %}" class="btn btn-outline-info" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'document-delete' doc.pk %}" class="btn btn-outline-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-file-alt fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">No documents found</h4>
+                        <p class="text-muted">Upload some documents to get started</p>
+                        {% if not request.user.is_read_only %}
+                        <a href="{% url 'document-create' %}" class="btn btn-primary mt-2">
+                            <i class="fas fa-upload me-1"></i> Upload Document
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,4 @@
+equipment_code,part_number,position,quantity,notes
+DP-XXXXX,5.12345.A,102,2,Part note 1
+DP-XXXXX,6.67890.B,103,1,Part note 2
+DP-YYYYY,5.12345.A,201,1,Part note 3

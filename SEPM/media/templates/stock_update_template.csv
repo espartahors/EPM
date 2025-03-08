@@ -1,0 +1,3 @@
+part_number,current_stock,update_date,notes
+5.12345.A,15,2023-01-01,Restocked from supplier
+6.67890.B,8,2023-01-01,Received from order #12345

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Import Data | Parts Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Import Data</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-file-import me-2"></i> Import Data</h2>
+        <p class="text-muted">Import data from CSV or Excel files</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card form-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-file-import me-2"></i> Import Data</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="importForm">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Need help?</strong> Download the appropriate template for each import type:
+                        <!-- Replace the template links in import_form.html with these: -->
+                        <!-- Replace the template links in import_form.html with these: -->
+                        <div class="mt-2">
+                            <a href="{% url 'download-equipment-template' 'xlsx' %}" class="btn btn-sm btn-outline-info me-2">
+                                <i class="fas fa-download me-1"></i> Equipment Template
+                            </a>
+                            <a href="{% url 'download-parts-template' 'xlsx' %}" class="btn btn-sm btn-outline-info me-2">
+                                <i class="fas fa-download me-1"></i> Parts Template
+                            </a>
+                            <a href="{% url 'download-bom-template' 'xlsx' %}" class="btn btn-sm btn-outline-info me-2">
+                                <i class="fas fa-download me-1"></i> BOM Template
+                            </a>
+                            <a href="{% url 'download-stock-template' 'xlsx' %}" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-download me-1"></i> Stock Update Template
+                            </a>
+                        </div>
+                    </div>
+                    
+                    
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary" id="importSubmitBtn">
+                            <i class="fas fa-file-import me-1"></i> Import Data
+                        </button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize form submission handler
+    document.addEventListener('DOMContentLoaded', function() {
+        handleFormSubmit('importForm', 'importSubmitBtn');
+    });
+</script>
+{% endblock %}

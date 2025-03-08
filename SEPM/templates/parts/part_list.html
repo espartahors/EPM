@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Parts List | Parts Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h2><i class="fas fa-tools me-2"></i> Parts List</h2>
+        <p class="text-muted">Manage and view all parts in the system</p>
+    </div>
+</div>
+
+<!-- Filters and Controls -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-filter me-2"></i> Filters</span>
+                    {% if not request.user.is_read_only %}
+                    <a href="{% url 'part-create' %}" class="btn btn-success">
+                        <i class="fas fa-plus me-1"></i> Add Part
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{% url 'part-list' %}">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" name="search" placeholder="Search parts..." value="{{ search_term }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" name="category">
+                                <option value="">All Categories</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" {% if category_id == category.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" name="status">
+                                <option value="">All Statuses</option>
+                                <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
+                                <option value="obsolete" {% if status == 'obsolete' %}selected{% endif %}>Obsolete</option>
+                                <option value="discontinued" {% if status == 'discontinued' %}selected{% endif %}>Discontinued</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select class="form-select" name="stock">
+                                <option value="">All Stock Levels</option>
+                                <option value="low" {% if stock_filter == 'low' %}selected{% endif %}>Low Stock</option>
+                                <option value="out" {% if stock_filter == 'out' %}selected{% endif %}>Out of Stock</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-primary w-100">Filter</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Parts Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-tools me-2"></i> Parts</h5>
+                    <div>
+                        <a href="{% url 'export-data' %}?export_type=parts" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-file-export me-1"></i> Export
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Part Number</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Stock</th>
+                                <th>Min. Level</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for part in parts %}
+                            <tr>
+                                <td>{{ part.part_number }}</td>
+                                <td>{{ part.name }}</td>
+                                <td>{{ part.category.name|default:"—" }}</td>
+                                <td>
+                                    {% if part.is_out_of_stock %}
+                                        <span class="badge rounded-pill bg-danger">Out of Stock</span>
+                                    {% elif part.is_low_stock %}
+                                        <span class="badge rounded-pill bg-warning text-dark">
+                                            Low ({{ part.current_stock }} {{ part.unit }})
+                                        </span>
+                                    {% else %}
+                                        <span class="badge rounded-pill bg-success">
+                                            {{ part.current_stock }} {{ part.unit }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ part.min_stock_level }} {{ part.unit }}</td>
+                                <td>
+                                    {% if part.status == 'active' %}
+                                        <span class="badge rounded-pill bg-success">Active</span>
+                                    {% elif part.status == 'obsolete' %}
+                                        <span class="badge rounded-pill bg-secondary">Obsolete</span>
+                                    {% elif part.status == 'discontinued' %}
+                                        <span class="badge rounded-pill bg-danger">Discontinued</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'part-detail' part.pk %}" class="btn btn-outline-primary" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if not request.user.is_read_only %}
+                                        <a href="{% url 'part-update' part.pk %}" class="btn btn-outline-info" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'part-delete' part.pk %}" class="btn btn-outline-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <i class="fas fa-exclamation-circle fa-2x text-muted mb-3"></i>
+                                    <p class="mb-0">No parts found matching your criteria.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

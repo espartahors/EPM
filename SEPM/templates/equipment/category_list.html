@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Equipment Categories | Parts Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h2><i class="fas fa-tags me-2"></i> Equipment Categories</h2>
+        <p class="text-muted">Manage categories for organizing equipment</p>
+    </div>
+</div>
+
+<!-- Controls -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-filter me-2"></i> Filter</span>
+                    {% if not request.user.is_read_only %}
+                    <a href="{% url 'category-create' %}" class="btn btn-success">
+                        <i class="fas fa-plus me-1"></i> Add Category
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Categories Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-tags me-2"></i> Equipment Categories</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Equipment Count</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in categories %}
+                            <tr>
+                                <td>{{ category.name }}</td>
+                                <td>{{ category.description|truncatechars:100|default:"—" }}</td>
+                                <td>{{ category.equipment_set.count }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'equipment-tree' %}?category={{ category.id }}" class="btn btn-outline-primary" title="View Equipment">
+                                            <i class="fas fa-sitemap"></i>
+                                        </a>
+                                        {% if not request.user.is_read_only %}
+                                        <a href="{% url 'category-update' category.pk %}" class="btn btn-outline-info" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'category-delete' category.pk %}" class="btn btn-outline-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <i class="fas fa-tags fa-2x text-muted mb-3"></i>
+                                    <p class="mb-0">No equipment categories found.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

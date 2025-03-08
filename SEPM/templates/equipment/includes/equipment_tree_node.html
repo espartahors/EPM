@@ -1,0 +1,17 @@
+<div class="tree-item">
+    <div class="tree-toggler" data-equipment-id="{{ equipment.id }}">
+        <i class="fas fa-chevron-right"></i>
+        <i class="fas {% if equipment.parent %}fa-cog{% else %}fa-industry{% endif %}"></i>
+        <span>{{ equipment.equipment_code }} - {{ equipment.name }}</span>
+        {% if equipment.get_children.count > 0 %}
+            <span class="badge rounded-pill bg-primary ms-1">{{ equipment.get_children.count }}</span>
+        {% endif %}
+    </div>
+    {% if equipment.get_children.count > 0 %}
+        <div class="tree-children">
+            {% for child in equipment.get_children %}
+                {% include 'equipment/includes/equipment_tree_node.html' with equipment=child %}
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>

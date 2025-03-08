@@ -1,0 +1,3 @@
+equipment_code,name,parent_code,position,item_code,revision,category,status,description
+DP-XXXXX,Equipment Name 1,,010,8.12345.A,A,Mechanical,active,Description for equipment 1
+DP-YYYYY,Equipment Name 2,DP-XXXXX,020,6.67890.B,B,Electrical,active,Description for equipment 2

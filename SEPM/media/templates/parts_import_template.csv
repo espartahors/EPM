@@ -1,0 +1,3 @@
+part_number,name,category,description,unit,current_stock,min_stock_level,status
+5.12345.A,Part Name 1,Mechanical,Description for part 1,pcs,10,5,active
+6.67890.B,Part Name 2,Electrical,Description for part 2,kg,5,2,active
