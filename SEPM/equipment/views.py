@@ -205,10 +205,7 @@ def dashboard(request):
     }
     return render(request, 'equipment/dashboard.html', context)
 
-from django.shortcuts import render
-from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from .models import Equipment
+
 
 @login_required
 def equipment_tree_data(request, parent_id=None):

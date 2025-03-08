@@ -443,3 +443,68 @@ def document_view(request, pk):
         'document': document,
     }
     return render(request, 'documentation/document_view.html', context)
+def process_bom_import(df, import_log):
+    """Process BOM import from dataframe"""
+    from equipment.models import Equipment, EquipmentPart
+    from parts.models import Part
+    
+    created = 0
+    updated = 0
+    failed = 0
+    errors = []
+    
+    for index, row in df.iterrows():
+        try:
+            equipment_code = row.get('equipment_code')
+            part_number = row.get('part_number')
+            position = row.get('position', '')
+            quantity = row.get('quantity', 1)
+            notes = row.get('notes', '')
+            
+            if not equipment_code or not part_number:
+                errors.append(f"Row {index+1}: Missing equipment_code or part_number")
+                failed += 1
+                continue
+            
+            try:
+                equipment = Equipment.objects.get(equipment_code=equipment_code)
+            except Equipment.DoesNotExist:
+                errors.append(f"Row {index+1}: Equipment {equipment_code} not found")
+                failed += 1
+                continue
+                
+            try:
+                part = Part.objects.get(part_number=part_number)
+            except Part.DoesNotExist:
+                errors.append(f"Row {index+1}: Part {part_number} not found")
+                failed += 1
+                continue
+            
+            # Check if this equipment-part relationship already exists
+            equipment_part, created_flag = EquipmentPart.objects.update_or_create(
+                equipment=equipment,
+                part=part,
+                position=position,
+                defaults={
+                    'quantity': quantity,
+                    'notes': notes
+                }
+            )
+            
+            if created_flag:
+                created += 1
+            else:
+                updated += 1
+                
+        except Exception as e:
+            errors.append(f"Row {index+1}: Error - {str(e)}")
+            failed += 1
+    
+    import_log.items_processed = created + updated + failed
+    import_log.items_created = created
+    import_log.items_updated = updated
+    import_log.items_failed = failed
+    import_log.log_details = "\n".join(errors)
+    import_log.save()
+    
+    return {'created': created, 'updated': updated, 'failed': failed}

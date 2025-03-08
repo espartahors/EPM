@@ -1,0 +1,126 @@
+<!-- templates/equipment/equipment_tree_view.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Equipment Tree | Parts Manager{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/themes/proton/style.min.css">
+<style>
+    #equipment-tree {
+        overflow-y: auto;
+        max-height: calc(100vh - 250px);
+        background: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+    }
+    
+    .details-panel {
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 20px;
+        height: calc(100vh - 250px);
+        overflow-y: auto;
+    }
+    
+    /* Search Bar */
+    .search-container {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        color: #999;
+    }
+    
+    .search-input {
+        padding-left: 35px;
+        border-radius: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h2><i class="fas fa-sitemap me-2"></i> Equipment Hierarchy</h2>
+        <p class="text-muted">Browse equipment hierarchy, view details, and manage related parts</p>
+    </div>
+</div>
+
+{% if not request.user.is_read_only %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-cog me-2"></i> Equipment Controls</span>
+                    <div>
+                        <a href="{% url 'equipment-create' %}" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i> Add Equipment
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Equipment Tree View -->
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-sitemap me-2"></i> Equipment Hierarchy</span>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary expand-all" title="Expand All">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary collapse-all" title="Collapse All">
+                            <i class="fas fa-compress-arrows-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="search-container p-2">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="form-control search-input" id="equipmentSearch" placeholder="Search equipment...">
+                </div>
+                <div id="equipment-tree"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Equipment Details Panel -->
+    <div class="col-md-8">
+        <div class="card details-panel">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Equipment Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-5" id="empty-details">
+                    <i class="fas fa-sitemap fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">Select an equipment from the tree</h4>
+                    <p class="text-muted">Equipment details will appear here</p>
+                </div>
+                <div id="equipment-details" style="display: none;">
+                    <!-- Equipment details loaded via AJAX will go here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
+<script src="{% static 'js/equipment-tree.js' %}"></script>
+{% endblock %}

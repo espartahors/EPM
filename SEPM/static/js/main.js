@@ -242,3 +242,170 @@ $(document).ready(function() {
         $('#equipment-tree').jstree('close_all');
     });
 });
+
+/**
+ * EquipmentTree - Unified component for equipment tree management
+ */
+class EquipmentTree {
+    constructor(config) {
+        this.treeElementId = config.treeElementId || 'equipment-tree';
+        this.detailsElementId = config.detailsElementId || 'equipment-details';
+        this.emptyDetailsElementId = config.emptyDetailsElementId || 'empty-details';
+        this.searchElementId = config.searchElementId || 'equipmentSearch';
+        this.baseApiUrl = config.baseApiUrl || '/api/tree/';
+        this.baseEquipmentUrl = config.baseEquipmentUrl || '/equipment/';
+        this.debug = config.debug || false;
+        
+        this.initTree();
+        this.initSearch();
+        this.initButtons();
+    }
+    
+    /**
+     * Initialize the equipment tree
+     */
+    initTree() {
+        const self = this;
+        
+        $(`#${this.treeElementId}`).jstree({
+            'core': {
+                'themes': {
+                    'name': 'proton',
+                    'responsive': true
+                },
+                'data': {
+                    'url': (node) => {
+                        const url = node.id === '#' ? 
+                            this.baseApiUrl : 
+                            `${this.baseApiUrl}${node.id}/`;
+                        
+                        if (this.debug) this.logDebug(`Data URL: ${url}`);
+                        return url;
+                    },
+                    'data': (node) => {
+                        if (this.debug) this.logDebug(`Requesting data for node: ${JSON.stringify(node)}`);
+                        return {'id': node.id};
+                    },
+                    'error': (jqXHR, textStatus, errorThrown) => {
+                        if (this.debug) this.logDebug(`Error loading data: ${textStatus} - ${errorThrown}`);
+                        this.showError(`Error loading tree data: ${errorThrown}`);
+                    }
+                }
+            },
+            'plugins': ['wholerow', 'types', 'search', 'state'],
+            'types': {
+                'default': {
+                    'icon': 'fas fa-cog'
+                },
+                'active': {
+                    'icon': 'fas fa-cog text-success'
+                },
+                'maintenance': {
+                    'icon': 'fas fa-wrench text-warning'
+                },
+                'inactive': {
+                    'icon': 'fas fa-cog text-secondary'
+                },
+                'retired': {
+                    'icon': 'fas fa-cog text-danger'
+                }
+            },
+            'search': {
+                'show_only_matches': true,
+                'show_only_matches_children': true
+            }
+        }).on('select_node.jstree', function(e, data) {
+            // Load equipment details when a node is selected
+            if (self.debug) self.logDebug(`Node selected: ${data.node.id}`);
+            self.loadEquipmentDetails(data.node.id);
+        }).on('loaded.jstree', function() {
+            if (self.debug) self.logDebug("Tree loaded successfully");
+        });
+    }
+    
+    /**
+     * Initialize equipment search
+     */
+    initSearch() {
+        const self = this;
+        $(`#${this.searchElementId}`).keyup(function() {
+            const searchTerm = $(this).val();
+            if (self.debug) self.logDebug(`Searching for: ${searchTerm}`);
+            $(`#${self.treeElementId}`).jstree('search', searchTerm);
+        });
+    }
+    
+    /**
+     * Initialize action buttons
+     */
+    initButtons() {
+        const self = this;
+        $('.expand-all').click(function() {
+            if (self.debug) self.logDebug("Expanding all nodes");
+            $(`#${self.treeElementId}`).jstree('open_all');
+        });
+        
+        $('.collapse-all').click(function() {
+            if (self.debug) self.logDebug("Collapsing all nodes");
+            $(`#${self.treeElementId}`).jstree('close_all');
+        });
+    }
+    
+    /**
+     * Load equipment details via AJAX
+     */
+    loadEquipmentDetails(equipmentId) {
+        $(`#${this.emptyDetailsElementId}`).hide();
+        $(`#${this.detailsElementId}`)
+            .html('<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-3x"></i><p class="mt-2">Loading details...</p></div>')
+            .show();
+        
+        if (this.debug) this.logDebug(`Loading details for equipment ID: ${equipmentId}`);
+        $.ajax({
+            url: `${this.baseEquipmentUrl}${equipmentId}/`,
+            type: 'GET',
+            dataType: 'html',
+            success: (data) => {
+                if (this.debug) this.logDebug("Details loaded successfully");
+                $(`#${this.detailsElementId}`).html(data);
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                if (this.debug) this.logDebug(`Error loading details: ${textStatus} - ${errorThrown}`);
+                this.showError(`Error loading equipment details: ${errorThrown}`);
+            }
+        });
+    }
+    
+    /**
+     * Show error message
+     */
+    showError(message) {
+        $(`#${this.detailsElementId}`).html(`<div class="alert alert-danger">${message}</div>`);
+    }
+    
+    /**
+     * Log debug message
+     */
+    logDebug(message) {
+        if (!this.debug) return;
+        
+        console.log(`[EquipmentTree] ${message}`);
+        
+        const debugElement = $('#debug-info');
+        if (debugElement.length) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugElement.append(`<div>[${timestamp}] ${message}</div>`);
+            debugElement.scrollTop(debugElement[0].scrollHeight);
+        }
+    }
+}
+
+// Initialize equipment tree on document ready
+$(document).ready(function() {
+    // Only initialize if the tree element exists
+    if ($('#equipment-tree').length) {
+        window.equipmentTree = new EquipmentTree({
+            debug: false  // Set to true only in development
+        });
+    }
+});

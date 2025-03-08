@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -9,6 +10,9 @@ SECRET_KEY = 'django-insecure-rh2^y5=p+e7nua3ff7+t=t_@h!m&izwb)tx1z&zd*q#dj@2jl8
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
+# Load environment variables from .env file
+load_dotenv()
 
 ALLOWED_HOSTS = []
 
@@ -41,6 +45,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'SEPM.middleware.GlobalErrorHandlingMiddleware', 
 ]
 
 ROOT_URLCONF = 'SEPM.urls'
@@ -64,19 +69,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'SEPM.wsgi.application'
 
 
+# Database configuration
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'sepm_db',
-        'USER': 'sepm_user',
-        'PASSWORD': 'ibaali3303', 
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME', 'sepm_db'),
+        'USER': os.environ.get('DB_USER', 'sepm_user'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'ibaali3303'),  # Remove hardcoded password
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
         'OPTIONS': {
-        'client_encoding': 'UTF8',
+            'client_encoding': 'UTF8',
         },
     }
 }
+
+# Secret key
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-rh2^y5=p+e7nua3ff7+t=t_@h!m&izwb)tx1z&zd*q#dj@2jl8')
+
+# Set debug based on environment
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 
 # Password validation
