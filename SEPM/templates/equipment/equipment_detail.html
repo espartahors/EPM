@@ -1,212 +1,284 @@
-<div class="row">
-    <div class="col-md-6">
-        <h5>{{ equipment.name }} ({{ equipment.position }} - {{ equipment.item_code }})</h5>
-        <p class="text-muted">{{ equipment.equipment_code }}</p>
-        
-        <table class="table table-sm table-bordered">
-            <tbody>
-                <tr>
-                    <th class="table-header">Category</th>
-                    <td>{{ equipment.category.name|default:"N/A" }}</td>
-                </tr>
-                <tr>
-                    <th class="table-header">Position</th>
-                    <td>{{ equipment.position|default:"N/A" }}</td>
-                </tr>
-                <tr>
-                    <th class="table-header">Item Code</th>
-                    <td>{{ equipment.item_code|default:"N/A" }}</td>
-                </tr>
-                <tr>
-                    <th class="table-header">Revision</th>
-                    <td>{{ equipment.revision|default:"N/A" }}</td>
-                </tr>
-                <tr>
-                    <th class="table-header">Status</th>
-                    <td>
-                        {% if equipment.status == 'active' %}
-                            <span class="badge rounded-pill bg-success">Active</span>
-                        {% elif equipment.status == 'inactive' %}
-                            <span class="badge rounded-pill bg-secondary">Inactive</span>
-                        {% elif equipment.status == 'maintenance' %}
-                            <span class="badge rounded-pill bg-warning text-dark">Under Maintenance</span>
-                        {% elif equipment.status == 'retired' %}
-                            <span class="badge rounded-pill bg-danger">Retired</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                <tr>
-                    <th class="table-header">Last Update</th>
-                    <td>{{ equipment.updated_at|date:"Y-m-d" }}</td>
-                </tr>
-            </tbody>
-        </table>
-        
-        {% if equipment.description %}
-            <h6 class="mt-3">Description</h6>
-            <p>{{ equipment.description }}</p>
-        {% endif %}
-        
-        <div class="mt-3">
-            <div class="btn-toolbar">
-                {% if not request.user.is_read_only %}
-                <a href="{% url 'equipment-update' equipment.pk %}" class="btn btn-sm btn-outline-primary me-1">
-                    <i class="fas fa-edit me-1"></i> Edit
-                </a>
-                <a href="{% url 'equipment-delete' equipment.pk %}" class="btn btn-sm btn-outline-danger me-1">
-                    <i class="fas fa-trash me-1"></i> Delete
-                </a>
-                <a href="{% url 'add-part-to-equipment' equipment.pk %}" class="btn btn-sm btn-outline-success">
-                    <i class="fas fa-plus me-1"></i> Add Part
-                </a>
-                {% endif %}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Equipment Tree | Parts Manager{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/themes/proton/style.min.css">
+<style>
+    #equipment-tree {
+        overflow-y: auto;
+        max-height: calc(100vh - 250px);
+        background: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+    }
+    
+    .details-panel {
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 20px;
+        height: calc(100vh - 250px);
+        overflow-y: auto;
+    }
+    
+    /* Search Bar */
+    .search-container {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 10px;
+        color: #999;
+    }
+    
+    .search-input {
+        padding-left: 35px;
+        border-radius: 20px;
+    }
+
+    #debug-info {
+        margin-top: 10px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        background-color: #f8f9fa;
+        font-family: monospace;
+        font-size: 12px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h2><i class="fas fa-sitemap me-2"></i> Equipment Hierarchy</h2>
+        <p class="text-muted">Browse equipment hierarchy, view details, and manage related parts</p>
+    </div>
+</div>
+
+{% if not request.user.is_read_only %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-cog me-2"></i> Equipment Controls</span>
+                    <div>
+                        <a href="{% url 'equipment-create' %}" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i> Add Equipment
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="document-preview">
-            {% if documents.exists %}
-                {% with documents.first as doc %}
-                    {% if doc.is_image %}
-                        <img src="{{ doc.file.url }}" class="img-fluid" style="max-height: 300px;">
-                    {% else %}
-                        <div class="text-center">
-                            <i class="fas fa-file-{% if doc.is_pdf %}pdf text-danger{% else %}alt text-primary{% endif %} fa-3x mb-3"></i>
-                            <p>{{ doc.title }}<br>(Click below to view)</p>
-                            <a href="{% url 'document-view' doc.pk %}" class="btn btn-primary" target="_blank">
-                                <i class="fas fa-eye me-1"></i> View Document
-                            </a>
-                        </div>
-                    {% endif %}
-                {% endwith %}
-            {% else %}
-                <div class="text-center">
-                    <i class="fas fa-file fa-3x text-muted mb-3"></i>
-                    <p>No documents available</p>
-                    {% if not request.user.is_read_only %}
-                    <a href="{% url 'document-create' %}" class="btn btn-outline-primary">
-                        <i class="fas fa-upload me-1"></i> Upload Document
-                    </a>
-                    {% endif %}
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Equipment Tree View -->
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-sitemap me-2"></i> Equipment Hierarchy</span>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary expand-all" title="Expand All">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary collapse-all" title="Collapse All">
+                            <i class="fas fa-compress-arrows-alt"></i>
+                        </button>
+                    </div>
                 </div>
-            {% endif %}
+            </div>
+            <div class="card-body p-0">
+                <div class="search-container p-2">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="form-control search-input" id="equipmentSearch" placeholder="Search equipment...">
+                </div>
+                <div id="equipment-tree"></div>
+                <div id="debug-info" style="display: none;"></div>
+                <div class="p-2">
+                    <button id="manual-load" class="btn btn-sm btn-outline-primary">Load Tree Manually</button>
+                    <button id="debug-toggle" class="btn btn-sm btn-outline-secondary">Toggle Debug</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Equipment Details Panel -->
+    <div class="col-md-8">
+        <div class="card details-panel">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Equipment Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-5" id="empty-details">
+                    <i class="fas fa-sitemap fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">Select an equipment from the tree</h4>
+                    <p class="text-muted">Equipment details will appear here</p>
+                </div>
+                <div id="equipment-details" style="display: none;">
+                    <!-- Equipment details loaded via AJAX will go here -->
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6><i class="fas fa-tools me-2"></i> Components/Parts</h6>
-            {% if not request.user.is_read_only %}
-            <a href="{% url 'add-part-to-equipment' equipment.pk %}" class="btn btn-sm btn-success">
-                <i class="fas fa-plus me-1"></i> Add Part
-            </a>
-            {% endif %}
-        </div>
-        <table class="table table-sm table-hover parts-table">
-            <thead class="table-header">
-                <tr>
-                    <th>Pos</th>
-                    <th>Part Number</th>
-                    <th>Name</th>
-                    <th>Qty</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ep in equipment_parts %}
-                <tr>
-                    <td>{{ ep.position }}</td>
-                    <td>{{ ep.part.part_number }}</td>
-                    <td>{{ ep.part.name }}</td>
-                    <td>{{ ep.quantity }}</td>
-                    <td>
-                        {% if ep.part.is_out_of_stock %}
-                            <span class="badge rounded-pill bg-danger">Out of Stock</span>
-                        {% elif ep.part.is_low_stock %}
-                            <span class="badge rounded-pill bg-warning text-dark">Low Stock</span>
-                        {% else %}
-                            <span class="badge rounded-pill bg-success">In Stock</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div class="btn-group btn-group-sm">
-                            <a href="{% url 'part-detail' ep.part.pk %}" class="btn btn-outline-info" title="View">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            {% if not request.user.is_read_only %}
-                            <a href="{% url 'remove-part-from-equipment' ep.pk %}" class="btn btn-outline-danger" title="Remove">
-                                <i class="fas fa-trash"></i>
-                            </a>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center py-3">No parts associated with this equipment.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Debug functions
+        function logDebug(message) {
+            const debugElement = $('#debug-info');
+            const timestamp = new Date().toLocaleTimeString();
+            debugElement.append(`<div>[${timestamp}] ${message}</div>`);
+            // Auto-scroll to bottom
+            debugElement.scrollTop(debugElement[0].scrollHeight);
+        }
 
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6><i class="fas fa-file-alt me-2"></i> Documentation</h6>
-            {% if not request.user.is_read_only %}
-            <a href="{% url 'document-create' %}" class="btn btn-sm btn-success">
-                <i class="fas fa-upload me-1"></i> Upload Document
-            </a>
-            {% endif %}
-        </div>
-        <table class="table table-sm table-hover">
-            <thead class="table-header">
-                <tr>
-                    <th>Type</th>
-                    <th>Title</th>
-                    <th>Last Updated</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for doc in documents %}
-                <tr>
-                    <td>
-                        <i class="fas fa-file-{% if doc.is_pdf %}pdf text-danger{% elif doc.is_image %}image text-primary{% else %}alt text-info{% endif %} me-1"></i>
-                        {{ doc.get_document_type_display }}
-                    </td>
-                    <td>{{ doc.title }}</td>
-                    <td>{{ doc.updated_at|date:"Y-m-d" }}</td>
-                    <td>
-                        <div class="btn-group btn-group-sm">
-                            <a href="{% url 'document-view' doc.pk %}" class="btn btn-outline-info" title="View" target="_blank">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{% url 'document-download' doc.pk %}" class="btn btn-outline-secondary" title="Download">
-                                <i class="fas fa-download"></i>
-                            </a>
-                            {% if not request.user.is_read_only %}
-                            <a href="{% url 'document-update' doc.pk %}" class="btn btn-outline-primary" title="Update">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <a href="{% url 'document-delete' doc.pk %}" class="btn btn-outline-danger" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </a>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" class="text-center py-3">No documents available for this equipment.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+        $('#debug-toggle').click(function() {
+            $('#debug-info').toggle();
+        });
+
+        // Initialize jsTree
+        function initializeTree() {
+            logDebug("Initializing tree...");
+            $('#equipment-tree').jstree({
+                'core': {
+                    'themes': {
+                        'name': 'proton',
+                        'responsive': true
+                    },
+                    'data': {
+                        'url': function(node) {
+                            const url = node.id === '#' ? 
+                                '/api/tree/' : 
+                                `/api/tree/${node.id}/`;
+                            logDebug(`Data URL: ${url}`);
+                            return url;
+                        },
+                        'data': function(node) {
+                            logDebug(`Requesting data for node: ${JSON.stringify(node)}`);
+                            return {'id': node.id};
+                        },
+                        'error': function(jqXHR, textStatus, errorThrown) {
+                            logDebug(`Error loading data: ${textStatus} - ${errorThrown}`);
+                        }
+                    }
+                },
+                'plugins': ['wholerow', 'types', 'search', 'state'],
+                'types': {
+                    'default': {
+                        'icon': 'fas fa-cog'
+                    },
+                    'active': {
+                        'icon': 'fas fa-cog text-success'
+                    },
+                    'maintenance': {
+                        'icon': 'fas fa-wrench text-warning'
+                    },
+                    'inactive': {
+                        'icon': 'fas fa-cog text-secondary'
+                    },
+                    'retired': {
+                        'icon': 'fas fa-cog text-danger'
+                    }
+                },
+                'search': {
+                    'show_only_matches': true,
+                    'show_only_matches_children': true
+                }
+            }).on('select_node.jstree', function(e, data) {
+                // Load equipment details when a node is selected
+                logDebug(`Node selected: ${data.node.id}`);
+                loadEquipmentDetails(data.node.id);
+            }).on('loaded.jstree', function() {
+                logDebug("Tree loaded successfully");
+            });
+        }
+
+        // Manual load button
+        $('#manual-load').click(function() {
+            logDebug("Manual load triggered");
+            // Fetch data directly
+            $.ajax({
+                url: '/api/tree/',
+                dataType: 'json',
+                success: function(data) {
+                    logDebug(`Received data: ${JSON.stringify(data)}`);
+                    if ($('#equipment-tree').jstree(true)) {
+                        $('#equipment-tree').jstree(true).destroy();
+                    }
+                    $('#equipment-tree').html('');
+                    
+                    // Create tree from received data
+                    $('#equipment-tree').jstree({
+                        'core': {
+                            'data': data
+                        },
+                        'plugins': ['wholerow', 'types']
+                    });
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    logDebug(`Manual load error: ${textStatus} - ${errorThrown}`);
+                    console.error("Error loading tree data:", errorThrown);
+                }
+            });
+        });
+
+        // Initialize tree
+        initializeTree();
+
+        // Equipment search function
+        $('#equipmentSearch').keyup(function() {
+            const searchTerm = $(this).val();
+            logDebug(`Searching for: ${searchTerm}`);
+            $('#equipment-tree').jstree('search', searchTerm);
+        });
+
+        // Load equipment details via AJAX
+        function loadEquipmentDetails(equipmentId) {
+            $('#empty-details').hide();
+            $('#equipment-details').html('<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-3x"></i><p class="mt-2">Loading details...</p></div>').show();
+            
+            logDebug(`Loading details for equipment ID: ${equipmentId}`);
+            $.ajax({
+                url: `/equipment/${equipmentId}/`,
+                type: 'GET',
+                dataType: 'html',
+                success: function(data) {
+                    logDebug("Details loaded successfully");
+                    $('#equipment-details').html(data);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    logDebug(`Error loading details: ${textStatus} - ${errorThrown}`);
+                    $('#equipment-details').html(`<div class="alert alert-danger">Error loading equipment details: ${errorThrown}</div>`);
+                }
+            });
+        }
+
+        // Expand/Collapse All buttons
+        $('.expand-all').click(function() {
+            logDebug("Expanding all nodes");
+            $('#equipment-tree').jstree('open_all');
+        });
+        
+        $('.collapse-all').click(function() {
+            logDebug("Collapsing all nodes");
+            $('#equipment-tree').jstree('close_all');
+        });
+    });
+</script>
+{% endblock %}

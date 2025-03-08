@@ -12,9 +12,11 @@ urlpatterns = [
     path('equipment-part/<int:equipment_part_id>/remove/', views.remove_part_from_equipment, name='remove-part-from-equipment'),
     path('categories/', views.CategoryListView.as_view(), name='category-list'),
     path('categories/new/', views.CategoryCreateView.as_view(), name='category-create'),
-    path('api/tree/', views.equipment_tree_view, name='equipment-tree-api'),
-
-    path('api/tree/<int:parent_id>/', views.equipment_tree_view, name='equipment-tree-api-with-parent'),
-    path('<int:pk>/details/', views.equipment_details_panel, name='equipment-details-panel'),
+    
+    # Dedicated tree data endpoints
+    path('api/tree/', views.equipment_tree_data, name='equipment-tree-api'),
+    path('api/tree/<int:parent_id>/', views.equipment_tree_data, name='equipment-tree-api-with-parent'),
+    
+    path('equipment/<int:pk>/details/', views.equipment_details_panel, name='equipment-details-panel'),
     path('dashboard/', views.equipment_dashboard, name='equipment-dashboard'),
 ]

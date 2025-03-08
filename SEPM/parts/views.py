@@ -160,3 +160,20 @@ def add_supplier_to_part(request, part_id):
         'part': part,
     }
     return render(request, 'parts/add_supplier_to_part.html', context)
+
+class PartCategoryUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = PartCategory
+    form_class = PartCategoryForm
+    template_name = 'parts/part_category_form.html'
+    success_url = reverse_lazy('part-category-list')
+    
+    def test_func(self):
+        return not self.request.user.is_read_only
+
+class PartCategoryDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = PartCategory
+    template_name = 'parts/part_category_confirm_delete.html'
+    success_url = reverse_lazy('part-category-list')
+    
+    def test_func(self):
+        return not self.request.user.is_read_only and self.request.user.is_staff_user

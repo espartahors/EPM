@@ -46,12 +46,22 @@ def equipment_detail(request, pk):
     equipment_parts = EquipmentPart.objects.filter(equipment=equipment)
     documents = Document.objects.filter(equipment=equipment)
     
+    # If this is an AJAX request, return only the details panel
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        context = {
+            'equipment': equipment,
+            'equipment_parts': equipment_parts,
+            'documents': documents,
+        }
+        return render(request, 'equipment/equipment_detail.html', context)
+
+    # Otherwise, return the full page
     context = {
         'equipment': equipment,
         'equipment_parts': equipment_parts,
         'documents': documents,
     }
-    return render(request, 'equipment/equipment_detail.html', context)
+    return render(request, 'equipment/equipment_detail_page.html', context)
 
 class EquipmentCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Equipment
@@ -194,3 +204,35 @@ def dashboard(request):
         'low_stock_parts': low_stock_parts[:5]
     }
     return render(request, 'equipment/dashboard.html', context)
+
+from django.shortcuts import render
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from .models import Equipment
+
+@login_required
+def equipment_tree_data(request, parent_id=None):
+    """
+    Return JSON data for jsTree.
+    This is a dedicated endpoint just for the tree data.
+    """
+    if parent_id:
+        equipment_items = Equipment.objects.filter(parent_id=parent_id)
+    else:
+        equipment_items = Equipment.objects.filter(parent=None)
+    
+    # Format data for jsTree
+    tree_data = []
+    for item in equipment_items:
+        has_children = Equipment.objects.filter(parent=item).exists()
+        tree_data.append({
+            'id': str(item.id),
+            'text': f"{item.equipment_code} - {item.name}",
+            'children': has_children,
+            'type': item.status,  # For node styling
+            'a_attr': {
+                'href': f"/equipment/{item.id}/"
+            }
+        })
+    
+    return JsonResponse(tree_data, safe=False)

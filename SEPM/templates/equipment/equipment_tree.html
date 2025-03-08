@@ -4,43 +4,15 @@
 {% block title %}Equipment Tree | Parts Manager{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/themes/proton/style.min.css">
 <style>
-    /* Tree View Styling */
-    .tree-view {
-        max-height: calc(100vh - 150px);
+    #equipment-tree {
         overflow-y: auto;
-        padding: 10px;
-        background-color: #f8f9fa;
+        max-height: calc(100vh - 250px);
+        background: #f8f9fa;
         border: 1px solid #ddd;
         border-radius: 4px;
-    }
-    
-    .tree-item {
-        padding: 5px 0;
-    }
-    
-    .tree-toggler {
-        cursor: pointer;
-        user-select: none;
-    }
-    
-    .tree-toggler i {
-        width: 20px;
-        text-align: center;
-    }
-    
-    .tree-children {
-        margin-left: 20px;
-        display: none;
-    }
-    
-    .tree-children.show {
-        display: block;
-    }
-    
-    .tree-item.selected > .tree-toggler {
-        font-weight: bold;
-        color: #007bff;
+        padding: 10px;
     }
     
     .details-panel {
@@ -48,7 +20,7 @@
         border: 1px solid #ddd;
         border-radius: 4px;
         padding: 20px;
-        height: calc(100vh - 170px);
+        height: calc(100vh - 250px);
         overflow-y: auto;
     }
     
@@ -68,6 +40,17 @@
     .search-input {
         padding-left: 35px;
         border-radius: 20px;
+    }
+
+    #debug-info {
+        margin-top: 10px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        background-color: #f8f9fa;
+        font-family: monospace;
+        font-size: 12px;
+        max-height: 200px;
+        overflow-y: auto;
     }
 </style>
 {% endblock %}
@@ -121,12 +104,11 @@
                     <i class="fas fa-search search-icon"></i>
                     <input type="text" class="form-control search-input" id="equipmentSearch" placeholder="Search equipment...">
                 </div>
-                <div class="tree-view">
-                    {% for equipment in root_equipment %}
-                        {% include 'equipment/includes/equipment_tree_node.html' with equipment=equipment %}
-                    {% empty %}
-                        <p class="p-3 text-muted">No equipment found. Add some equipment to get started.</p>
-                    {% endfor %}
+                <div id="equipment-tree"></div>
+                <div id="debug-info" style="display: none;"></div>
+                <div class="p-2">
+                    <button id="manual-load" class="btn btn-sm btn-outline-primary">Load Tree Manually</button>
+                    <button id="debug-toggle" class="btn btn-sm btn-outline-secondary">Toggle Debug</button>
                 </div>
             </div>
         </div>
@@ -154,79 +136,149 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
 <script>
     $(document).ready(function() {
-        // Toggle tree items
-        $('.tree-toggler').click(function(e) {
-            e.preventDefault();
-            $(this).find('i:first').toggleClass('fa-chevron-right fa-chevron-down');
-            $(this).parent().children('.tree-children').toggleClass('show');
+        // Debug functions
+        function logDebug(message) {
+            const debugElement = $('#debug-info');
+            const timestamp = new Date().toLocaleTimeString();
+            debugElement.append(`<div>[${timestamp}] ${message}</div>`);
+            // Auto-scroll to bottom
+            debugElement.scrollTop(debugElement[0].scrollHeight);
+        }
+
+        $('#debug-toggle').click(function() {
+            $('#debug-info').toggle();
         });
-        
-        // Select tree items
-        $('.tree-toggler').click(function() {
-            $('.tree-item').removeClass('selected');
-            $(this).parent().addClass('selected');
-            
-            // Load equipment details via AJAX if this is an equipment item
-            var equipmentId = $(this).data('equipment-id');
-            if (equipmentId) {
-                loadEquipmentDetails(equipmentId);
-            }
-        });
-        
-        // Expand All button functionality
-        $('.expand-all').click(function() {
-            $('.tree-children').addClass('show');
-            $('.tree-toggler i:first-child').removeClass('fa-chevron-right').addClass('fa-chevron-down');
-        });
-        
-        // Collapse All button functionality
-        $('.collapse-all').click(function() {
-            $('.tree-children').removeClass('show');
-            $('.tree-toggler i:first-child').removeClass('fa-chevron-down').addClass('fa-chevron-right');
-        });
-        
-        // Filter tree functionality
-        $('#equipmentSearch').on('keyup', function() {
-            var value = $(this).val().toLowerCase();
-            $('.tree-item').each(function() {
-                var text = $(this).find('> .tree-toggler span').text().toLowerCase();
-                var found = text.indexOf(value) > -1;
-                
-                if (found) {
-                    $(this).show();
-                    // Expand parents to make visible items that match
-                    $(this).parents('.tree-children').addClass('show');
-                    $(this).parents('.tree-item').find('> .tree-toggler i:first-child')
-                        .removeClass('fa-chevron-right').addClass('fa-chevron-down');
-                } else {
-                    // Only hide if no children match the search
-                    var hasMatchingChildren = $(this).find('.tree-item:visible').length > 0;
-                    if (!hasMatchingChildren) {
-                        $(this).hide();
+
+        // Initialize jsTree
+        function initializeTree() {
+            logDebug("Initializing tree...");
+            $('#equipment-tree').jstree({
+                'core': {
+                    'themes': {
+                        'name': 'proton',
+                        'responsive': true
+                    },
+                    'data': {
+                        'url': function(node) {
+                            const url = node.id === '#' ? 
+                                '/api/tree/' : 
+                                `/api/tree/${node.id}/`;
+                            logDebug(`Data URL: ${url}`);
+                            return url;
+                        },
+                        'data': function(node) {
+                            logDebug(`Requesting data for node: ${JSON.stringify(node)}`);
+                            return {'id': node.id};
+                        },
+                        'error': function(jqXHR, textStatus, errorThrown) {
+                            logDebug(`Error loading data: ${textStatus} - ${errorThrown}`);
+                        }
                     }
+                },
+                'plugins': ['wholerow', 'types', 'search', 'state'],
+                'types': {
+                    'default': {
+                        'icon': 'fas fa-cog'
+                    },
+                    'active': {
+                        'icon': 'fas fa-cog text-success'
+                    },
+                    'maintenance': {
+                        'icon': 'fas fa-wrench text-warning'
+                    },
+                    'inactive': {
+                        'icon': 'fas fa-cog text-secondary'
+                    },
+                    'retired': {
+                        'icon': 'fas fa-cog text-danger'
+                    }
+                },
+                'search': {
+                    'show_only_matches': true,
+                    'show_only_matches_children': true
+                }
+            }).on('select_node.jstree', function(e, data) {
+                // Load equipment details when a node is selected
+                logDebug(`Node selected: ${data.node.id}`);
+                loadEquipmentDetails(data.node.id);
+            }).on('loaded.jstree', function() {
+                logDebug("Tree loaded successfully");
+            });
+        }
+
+        // Manual load button
+        $('#manual-load').click(function() {
+            logDebug("Manual load triggered");
+            // Fetch data directly
+            $.ajax({
+                url: '/api/tree/',
+                dataType: 'json',
+                success: function(data) {
+                    logDebug(`Received data: ${JSON.stringify(data)}`);
+                    if ($('#equipment-tree').jstree(true)) {
+                        $('#equipment-tree').jstree(true).destroy();
+                    }
+                    $('#equipment-tree').html('');
+                    
+                    // Create tree from received data
+                    $('#equipment-tree').jstree({
+                        'core': {
+                            'data': data
+                        },
+                        'plugins': ['wholerow', 'types']
+                    });
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    logDebug(`Manual load error: ${textStatus} - ${errorThrown}`);
+                    console.error("Error loading tree data:", errorThrown);
                 }
             });
         });
-        
+
+        // Initialize tree
+        initializeTree();
+
+        // Equipment search function
+        $('#equipmentSearch').keyup(function() {
+            const searchTerm = $(this).val();
+            logDebug(`Searching for: ${searchTerm}`);
+            $('#equipment-tree').jstree('search', searchTerm);
+        });
+
         // Load equipment details via AJAX
         function loadEquipmentDetails(equipmentId) {
             $('#empty-details').hide();
             $('#equipment-details').html('<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-3x"></i><p class="mt-2">Loading details...</p></div>').show();
             
+            logDebug(`Loading details for equipment ID: ${equipmentId}`);
             $.ajax({
-                url: '/equipment/' + equipmentId + '/',
+                url: `/equipment/${equipmentId}/`,
                 type: 'GET',
                 dataType: 'html',
                 success: function(data) {
+                    logDebug("Details loaded successfully");
                     $('#equipment-details').html(data);
                 },
-                error: function() {
-                    $('#equipment-details').html('<div class="alert alert-danger">Error loading equipment details.</div>');
+                error: function(jqXHR, textStatus, errorThrown) {
+                    logDebug(`Error loading details: ${textStatus} - ${errorThrown}`);
+                    $('#equipment-details').html(`<div class="alert alert-danger">Error loading equipment details: ${errorThrown}</div>`);
                 }
             });
         }
+
+        // Expand/Collapse All buttons
+        $('.expand-all').click(function() {
+            logDebug("Expanding all nodes");
+            $('#equipment-tree').jstree('open_all');
+        });
+        
+        $('.collapse-all').click(function() {
+            logDebug("Collapsing all nodes");
+            $('#equipment-tree').jstree('close_all');
+        });
     });
 </script>
 {% endblock %}
