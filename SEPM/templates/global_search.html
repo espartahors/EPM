@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Search Results | Parts Manager{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-search me-2"></i> Search Results</h2>
+        <p class="text-muted">
+            {% if query %}
+                Search results for "{{ query }}"
+                {% if total_results > 0 %}
+                    ({{ total_results }} results found)
+                {% else %}
+                    (No results found)
+                {% endif %}
+            {% else %}
+                Enter a search term to find equipment, parts or documents
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-12">
+        <form method="GET" action="{% url 'global-search' %}">
+            <div class="input-group">
+                <input type="text" class="form-control form-control-lg" name="q" value="{{ query }}" placeholder="Search for equipment, parts or documents...">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search me-1"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if query %}
+    <div class="row">
+        <!-- Equipment Results -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-sitemap me-2"></i> Equipment
+                        <span class="badge bg-light text-primary float-end">{{ equipment_results|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if equipment_results %}
+                        <div class="list-group list-group-flush">
+                            {% for equipment in equipment_results %}
+                                <a href="{% url 'equipment-detail' equipment.pk %}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ equipment.equipment_code }}</strong> - {{ equipment.name }}
+                                            <div class="small text-muted">{{ equipment.item_code|default:"" }}</div>
+                                        </div>
+                                        <span class="badge bg-{% if equipment.status == 'active' %}success{% elif equipment.status == 'maintenance' %}warning{% elif equipment.status == 'retired' %}danger{% else %}secondary{% endif %}">
+                                            {{ equipment.get_status_display }}
+                                        </span>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="fas fa-search fa-2x mb-3"></i>
+                            <p>No equipment found matching your search.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Parts Results -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tools me-2"></i> Parts
+                        <span class="badge bg-light text-success float-end">{{ parts_results|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if parts_results %}
+                        <div class="list-group list-group-flush">
+                            {% for part in parts_results %}
+                                <a href="{% url 'part-detail' part.pk %}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ part.part_number }}</strong> - {{ part.name }}
+                                            <div class="small text-muted">{{ part.category.name|default:"" }}</div>
+                                        </div>
+                                        <div>
+                                            {% if part.is_out_of_stock %}
+                                                <span class="badge bg-danger">Out of Stock</span>
+                                            {% elif part.is_low_stock %}
+                                                <span class="badge bg-warning text-dark">Low Stock</span>
+                                            {% else %}
+                                                <span class="badge bg-success">{{ part.current_stock }} {{ part.unit }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="fas fa-search fa-2x mb-3"></i>
+                            <p>No parts found matching your search.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Documents Results -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt me-2"></i> Documents
+                        <span class="badge bg-light text-info float-end">{{ document_results|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if document_results %}
+                        <div class="list-group list-group-flush">
+                            {% for document in document_results %}
+                                <a href="{% url 'document-detail' document.pk %}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-file-{% if document.is_pdf %}pdf text-danger{% elif document.is_image %}image text-primary{% else %}alt text-info{% endif %} me-1"></i>
+                                            <strong>{{ document.title }}</strong>
+                                            <div class="small text-muted">{{ document.get_document_type_display }}</div>
+                                        </div>
+                                        <div>
+                                            <a href="{% url 'document-view' document.pk %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="fas fa-search fa-2x mb-3"></i>
+                            <p>No documents found matching your search.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

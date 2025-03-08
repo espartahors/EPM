@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Equipment Dashboard | Parts Manager{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/themes/proton/style.min.css">
+<style>
+    .split-pane-container {
+        display: flex;
+        height: calc(100vh - 120px);
+        border: 1px solid #ddd;
+        overflow: hidden;
+    }
+    
+    .tree-panel {
+        width: 30%;
+        overflow: auto;
+        border-right: 1px solid #ddd;
+        padding: 10px;
+    }
+    
+    .detail-panel {
+        width: 70%;
+        overflow: auto;
+        padding: 0;
+    }
+    
+    .gutter {
+        background-color: #eee;
+        background-repeat: no-repeat;
+        background-position: 50%;
+        cursor: col-resize;
+    }
+    
+    .gutter.gutter-horizontal {
+        background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h2><i class="fas fa-sitemap me-2"></i> Equipment Management</h2>
+        <p class="text-muted">Browse equipment hierarchy and manage components, parts and documentation</p>
+    </div>
+</div>
+
+<div class="split-pane-container">
+    <div class="tree-panel" id="tree-panel">
+        <div class="mb-3">
+            <div class="input-group">
+                <input type="text" class="form-control" id="equipment-search" placeholder="Search equipment...">
+                <button class="btn btn-outline-secondary" type="button" id="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Equipment Tree -->
+        <div id="equipment-tree"></div>
+    </div>
+    
+    <div class="detail-panel" id="detail-panel">
+        <div class="text-center my-5">
+            <i class="fas fa-sitemap fa-4x text-muted mb-4"></i>
+            <h4 class="text-muted">Select equipment from the tree</h4>
+            <p class="text-muted">Equipment details will be displayed here</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/jstree@3.3.12/dist/jstree.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/split.js@1.6.5/dist/split.min.js"></script>
+<script>
+    // Initialize split panes
+    Split(['#tree-panel', '#detail-panel'], {
+        sizes: [30, 70],
+        minSize: [200, 400],
+        gutterSize: 8,
+        cursor: 'col-resize'
+    });
+    
+    // Equipment search function
+    $('#search-btn').click(function() {
+        var searchText = $('#equipment-search').val();
+        $('#equipment-tree').jstree('search', searchText);
+    });
+    
+    $('#equipment-search').keypress(function(e) {
+        if (e.which == 13) {
+            var searchText = $('#equipment-search').val();
+            $('#equipment-tree').jstree('search', searchText);
+        }
+    });
+</script>
+{% endblock %}

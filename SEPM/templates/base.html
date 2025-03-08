@@ -90,10 +90,10 @@
                     </li>
                     {% endif %}
                 </ul>
-                <!-- Search Box -->
-                <form class="d-flex me-2" method="GET" action="{% url 'part-list' %}">
+                <!-- Global Search Box -->
+                <form class="d-flex me-2" method="GET" action="{% url 'global-search' %}">
                     <div class="input-group">
-                        <input class="form-control" type="search" name="search" placeholder="Global Search..." aria-label="Search">
+                        <input class="form-control" type="search" name="q" placeholder="Global Search..." aria-label="Search">
                         <button class="btn btn-outline-light" type="submit"><i class="fas fa-search"></i></button>
                     </div>
                 </form>

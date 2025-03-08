@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ document.title }} | Parts Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+    .document-viewer {
+        width: 100%;
+        height: calc(100vh - 150px);
+        border: 1px solid #ddd;
+    }
+    
+    .toolbar {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .document-content {
+        height: calc(100% - 60px);
+        overflow: auto;
+    }
+    
+    .zoom-controls {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background-color: rgba(255, 255, 255, 0.7);
+        border-radius: 4px;
+        padding: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'document-list' %}">Documents</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ document.title }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-8">
+        <h2>{{ document.title }}</h2>
+        <p class="text-muted">
+            <span class="badge bg-info">{{ document.get_document_type_display }}</span>
+            {% if document.equipment %}
+            <span class="badge bg-primary">
+                <i class="fas fa-sitemap me-1"></i> {{ document.equipment.equipment_code }}
+            </span>
+            {% endif %}
+            {% if document.part %}
+            <span class="badge bg-success">
+                <i class="fas fa-tools me-1"></i> {{ document.part.part_number }}
+            </span>
+            {% endif %}
+        </p>
+    </div>
+    <div class="col-md-4 text-end">
+        <div class="btn-group">
+            <a href="{% url 'document-download' document.pk %}" class="btn btn-secondary">
+                <i class="fas fa-download me-1"></i> Download
+            </a>
+            {% if not request.user.is_read_only %}
+            <a href="{% url 'document-update' document.pk %}" class="btn btn-info text-white">
+                <i class="fas fa-edit me-1"></i> Edit
+            </a>
+            {% endif %}
+            <a href="javascript:window.print();" class="btn btn-primary">
+                <i class="fas fa-print me-1"></i> Print
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="document-viewer">
+    <div class="toolbar">
+        <div class="btn-group">
+            <button class="btn btn-sm btn-outline-secondary" id="rotate-left">
+                <i class="fas fa-undo"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="rotate-right">
+                <i class="fas fa-redo"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="zoom-out">
+                <i class="fas fa-search-minus"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="zoom-reset">
+                <i class="fas fa-expand"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="zoom-in">
+                <i class="fas fa-search-plus"></i>
+            </button>
+        </div>
+        
+        <span class="ms-3">
+            {% if document.revision %}
+            <span class="badge bg-secondary">Rev: {{ document.revision }}</span>
+            {% endif %}
+            <span class="badge bg-info">{{ document.filename }}</span>
+        </span>
+    </div>
+    
+    <div class="document-content" id="document-content">
+        {% if document.is_pdf %}
+            <object data="{{ document.file.url }}" type="application/pdf" width="100%" height="100%">
+                <p>It appears your browser doesn't support embedded PDFs. 
+                <a href="{{ document.file.url }}" target="_blank">Click here to download the PDF</a>.</p>
+            </object>
+        {% elif document.is_image %}
+            <div class="text-center p-3">
+                <img src="{{ document.file.url }}" id="document-image" class="img-fluid" alt="{{ document.title }}">
+            </div>
+        {% else %}
+            <div class="alert alert-warning m-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                This document type cannot be previewed. 
+                <a href="{% url 'document-download' document.pk %}" class="alert-link">Download it</a> to view.
+            </div>
+        {% endif %}
+    </div>
+    
+    {% if document.is_image %}
+    <div class="zoom-controls">
+        <div class="btn-group">
+            <button class="btn btn-sm btn-light" id="img-zoom-out">
+                <i class="fas fa-search-minus"></i>
+            </button>
+            <button class="btn btn-sm btn-light" id="img-zoom-reset">
+                100%
+            </button>
+            <button class="btn btn-sm btn-light" id="img-zoom-in">
+                <i class="fas fa-search-plus"></i>
+            </button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        {% if document.description %}
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Description</h5>
+            </div>
+            <div class="card-body">
+                {{ document.description }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Document Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-bordered">
+                    <tr>
+                        <th class="w-30 bg-light">Uploaded by</th>
+                        <td>{{ document.uploaded_by.username|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light">Uploaded at</th>
+                        <td>{{ document.uploaded_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light">Last updated</th>
+                        <td>{{ document.updated_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light">Status</th>
+                        <td>
+                            {% if document.is_current %}
+                                <span class="badge bg-success">Current</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Outdated</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Image manipulation for image documents
+    {% if document.is_image %}
+    let currentRotation = 0;
+    let currentZoom = 100;
+    
+    $('#rotate-left').click(function() {
+        currentRotation = (currentRotation - 90) % 360;
+        $('#document-image').css('transform', `rotate(${currentRotation}deg) scale(${currentZoom/100})`);
+    });
+    
+    $('#rotate-right').click(function() {
+        currentRotation = (currentRotation + 90) % 360;
+        $('#document-image').css('transform', `rotate(${currentRotation}deg) scale(${currentZoom/100})`);
+    });
+    
+    $('#img-zoom-in, #zoom-in').click(function() {
+        currentZoom += 25;
+        $('#document-image').css('transform', `rotate(${currentRotation}deg) scale(${currentZoom/100})`);
+        $('#img-zoom-reset').text(`${currentZoom}%`);
+    });
+    
+    $('#img-zoom-out, #zoom-out').click(function() {
+        if (currentZoom > 25) {
+            currentZoom -= 25;
+            $('#document-image').css('transform', `rotate(${currentRotation}deg) scale(${currentZoom/100})`);
+            $('#img-zoom-reset').text(`${currentZoom}%`);
+        }
+    });
+    
+    $('#img-zoom-reset, #zoom-reset').click(function() {
+        currentZoom = 100;
+        $('#document-image').css('transform', `rotate(${currentRotation}deg) scale(1)`);
+        $('#img-zoom-reset').text('100%');
+    });
+    {% endif %}
+</script>
+{% endblock %}

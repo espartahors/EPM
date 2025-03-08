@@ -433,3 +433,13 @@ def process_stock_update(df, import_log):
     import_log.save()
     
     return {'created': 0, 'updated': updated}
+
+@login_required
+def document_view(request, pk):
+    """View document inline (for PDFs and images)"""
+    document = get_object_or_404(Document, pk=pk)
+    
+    context = {
+        'document': document,
+    }
+    return render(request, 'documentation/document_view.html', context)

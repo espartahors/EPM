@@ -143,3 +143,54 @@ class CategoryCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     
     def test_func(self):
         return not self.request.user.is_read_only
+
+@login_required
+def equipment_dashboard(request):
+    """Main equipment dashboard with tree view and details panel"""
+    context = {
+        'equipment_count': Equipment.objects.count(),
+        'category_count': Category.objects.count(),
+    }
+    return render(request, 'equipment/equipment_dashboard.html', context)
+
+@login_required
+def equipment_details_panel(request, pk):
+    """Return the equipment details panel HTML"""
+    equipment = get_object_or_404(Equipment, pk=pk)
+    parts = EquipmentPart.objects.filter(equipment=equipment)
+    documents = Document.objects.filter(equipment=equipment)
+    
+    context = {
+        'equipment': equipment,
+        'parts': parts,
+        'documents': documents,
+    }
+    return render(request, 'equipment/equipment_details_panel.html', context)
+
+@login_required
+def dashboard(request):
+    equipment_count = Equipment.objects.count()
+    part_count = Part.objects.count()
+    category_count = Category.objects.count()
+    document_count = Document.objects.count()
+    
+    # Get equipment that need maintenance
+    maintenance_equipment = Equipment.objects.filter(status='maintenance').count()
+    
+    # Get low stock parts
+    low_stock_parts = []
+    for part in Part.objects.all():
+        if part.is_low_stock() or part.is_out_of_stock():
+            low_stock_parts.append(part)
+    
+    context = {
+        'equipment_count': equipment_count,
+        'part_count': part_count,
+        'category_count': category_count,
+        'document_count': document_count,
+        'maintenance_equipment': maintenance_equipment,
+        'recent_equipment': Equipment.objects.order_by('-updated_at')[:5],
+        'recent_parts': Part.objects.order_by('-updated_at')[:5],
+        'low_stock_parts': low_stock_parts[:5]
+    }
+    return render(request, 'equipment/dashboard.html', context)

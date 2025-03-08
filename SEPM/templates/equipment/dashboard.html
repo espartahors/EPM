@@ -11,6 +11,58 @@
     </div>
 </div>
 
+<!-- Quick Action Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card border-primary h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-sitemap fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Equipment</h5>
+                <p class="card-text">Browse the equipment hierarchy</p>
+                <a href="{% url 'equipment-dashboard' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-right me-1"></i> Open
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-success h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-tools fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Parts</h5>
+                <p class="card-text">Manage parts and inventory</p>
+                <a href="{% url 'part-list' %}" class="btn btn-success">
+                    <i class="fas fa-arrow-right me-1"></i> Open
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-info h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-file-alt fa-3x text-info mb-3"></i>
+                <h5 class="card-title">Documents</h5>
+                <p class="card-text">Browse and manage documents</p>
+                <a href="{% url 'document-list' %}" class="btn btn-info text-white">
+                    <i class="fas fa-arrow-right me-1"></i> Open
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-warning h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-search fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">Global Search</h5>
+                <p class="card-text">Search across all data</p>
+                <a href="{% url 'global-search' %}" class="btn btn-warning text-dark">
+                    <i class="fas fa-arrow-right me-1"></i> Open
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Stats Cards -->
 <div class="row mb-4">
     <div class="col-md-3 mb-3">
@@ -26,11 +78,6 @@
                     </div>
                 </div>
                 <p class="mt-2 mb-0">Total equipment items</p>
-            </div>
-            <div class="card-footer bg-primary border-top border-light border-opacity-25">
-                <a href="{% url 'equipment-tree' %}" class="text-white text-decoration-none small">
-                    <i class="fas fa-arrow-right me-1"></i> View Equipment
-                </a>
             </div>
         </div>
     </div>
@@ -49,11 +96,6 @@
                 </div>
                 <p class="mt-2 mb-0">Total parts in inventory</p>
             </div>
-            <div class="card-footer bg-success border-top border-light border-opacity-25">
-                <a href="{% url 'part-list' %}" class="text-white text-decoration-none small">
-                    <i class="fas fa-arrow-right me-1"></i> View Parts
-                </a>
-            </div>
         </div>
     </div>
     
@@ -71,11 +113,6 @@
                 </div>
                 <p class="mt-2 mb-0">Equipment categories</p>
             </div>
-            <div class="card-footer bg-info border-top border-light border-opacity-25">
-                <a href="{% url 'category-list' %}" class="text-white text-decoration-none small">
-                    <i class="fas fa-arrow-right me-1"></i> View Categories
-                </a>
-            </div>
         </div>
     </div>
     
@@ -92,11 +129,6 @@
                     </div>
                 </div>
                 <p class="mt-2 mb-0">Total documents</p>
-            </div>
-            <div class="card-footer bg-warning border-top border-dark border-opacity-10">
-                <a href="{% url 'document-list' %}" class="text-dark text-decoration-none small">
-                    <i class="fas fa-arrow-right me-1"></i> View Documents
-                </a>
             </div>
         </div>
     </div>
@@ -157,13 +189,13 @@
         </div>
     </div>
     
-    <!-- Recent Parts -->
+    <!-- Low Stock Parts -->
     <div class="col-md-6 mb-4">
         <div class="card h-100">
             <div class="card-header bg-light">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-tools me-2"></i> Recent Parts</h5>
-                    <a href="{% url 'part-list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2 text-warning"></i> Low Stock Parts</h5>
+                    <a href="{% url 'part-list' %}?stock=low" class="btn btn-sm btn-outline-primary">View All</a>
                 </div>
             </div>
             <div class="card-body p-0">
@@ -174,11 +206,12 @@
                                 <th>Part Number</th>
                                 <th>Name</th>
                                 <th>Stock</th>
-                                <th>Status</th>
+                                <th>Min Level</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for part in recent_parts %}
+                            {% for part in low_stock_parts %}
                             <tr>
                                 <td>{{ part.part_number }}</td>
                                 <td>
@@ -190,67 +223,23 @@
                                     {% if part.is_out_of_stock %}
                                         <span class="badge bg-danger">Out of Stock</span>
                                     {% elif part.is_low_stock %}
-                                        <span class="badge bg-warning text-dark">Low Stock</span>
-                                    {% else %}
-                                        <span class="badge bg-success">{{ part.current_stock }} {{ part.unit }}</span>
+                                        <span class="badge bg-warning text-dark">{{ part.current_stock }} {{ part.unit }}</span>
                                     {% endif %}
                                 </td>
+                                <td>{{ part.min_stock_level }} {{ part.unit }}</td>
                                 <td>
-                                    {% if part.status == 'active' %}
-                                        <span class="badge bg-success">Active</span>
-                                    {% elif part.status == 'obsolete' %}
-                                        <span class="badge bg-secondary">Obsolete</span>
-                                    {% elif part.status == 'discontinued' %}
-                                        <span class="badge bg-danger">Discontinued</span>
-                                    {% endif %}
+                                    <a href="{% url 'part-detail' part.pk %}" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="4" class="text-center py-3">No parts found.</td>
+                                <td colspan="5" class="text-center py-3">No low stock parts found.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Actions -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-light">
-                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i> Quick Actions</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <a href="{% url 'equipment-create' %}" class="btn btn-outline-primary w-100 h-100 d-flex flex-column justify-content-center align-items-center p-3">
-                            <i class="fas fa-plus-circle fa-2x mb-2"></i>
-                            <span>Add Equipment</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <a href="{% url 'part-create' %}" class="btn btn-outline-success w-100 h-100 d-flex flex-column justify-content-center align-items-center p-3">
-                            <i class="fas fa-plus-circle fa-2x mb-2"></i>
-                            <span>Add Part</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <a href="{% url 'document-create' %}" class="btn btn-outline-info w-100 h-100 d-flex flex-column justify-content-center align-items-center p-3">
-                            <i class="fas fa-upload fa-2x mb-2"></i>
-                            <span>Upload Document</span>
-                        </a>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <a href="{% url 'import-data' %}" class="btn btn-outline-warning w-100 h-100 d-flex flex-column justify-content-center align-items-center p-3">
-                            <i class="fas fa-file-import fa-2x mb-2"></i>
-                            <span>Import Data</span>
-                        </a>
-                    </div>
                 </div>
             </div>
         </div>
